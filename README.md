@@ -34,7 +34,7 @@ sudo apt-get install -y libnuma1 numactl
 Start the OpenVLA inference server by running:
 
 ```bash
-python server.py
+python openvla_server.py --seed 1
 ```
 
 The server will be accessible at `http://localhost:3200`.
