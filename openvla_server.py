@@ -2,7 +2,7 @@ import numpy as np
 from transformers import AutoConfig
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Union
+from typing import List, Union, Optional
 import json_numpy as json
 import uvicorn
 import os
@@ -59,9 +59,15 @@ class TokenToAction:
 
 
 class BatchRequest(BaseModel):
-    instructions: List[str]
+    # Backward/forward compatible request schema.
+    # Accept either a single "instruction" or a list of "instructions".
+    instruction: Optional[str] = None
+    instructions: Optional[List[str]] = None
     image_path: str
     temperature: float = 1.0
+    # Some clients may send this; the server will ignore it and instead
+    # treat each request atomically.
+    batch_size: Optional[int] = None
 
 
 class BatchResponse(BaseModel):
@@ -122,9 +128,17 @@ async def batch_actions(request: BatchRequest):
         if not os.path.exists(request.image_path):
             raise HTTPException(status_code=400, detail=f"Image file not found: {request.image_path}")
         
+        # Normalize to a list of instructions (support both keys)
+        if request.instructions and len(request.instructions) > 0:
+            normalized_instructions = request.instructions
+        elif request.instruction:
+            normalized_instructions = [request.instruction]
+        else:
+            raise HTTPException(status_code=400, detail="Missing 'instructions' or 'instruction' in request body")
+
         # Prepare batch arguments
         arguments = []
-        for instruction in request.instructions:
+        for instruction in normalized_instructions:
             question = f"In: What action should the robot take to {instruction}?\nOut:"
             arguments.append({
                 "image_path": request.image_path,
