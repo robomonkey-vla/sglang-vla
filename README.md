@@ -1,5 +1,5 @@
 <div align="center"  id="sglangtop">
-<img src="assets/logo.png" alt="logo" width="400" margin="10px"></img>
+<img src="logo.png" alt="logo" width="400" margin="10px"></img>
 
 </div>
 
